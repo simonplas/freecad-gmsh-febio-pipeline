@@ -30,7 +30,8 @@ At the moment, the pipeline can:
 - convert the `.xplt` result file to `.hdf5`;
 - extract displacement, reaction force, stress, strain, and compression
   stiffness values with Python;
-- run small parameter studies for mesh convergence and Young's modulus.
+- run small parameter studies for mesh convergence, Young's modulus, and
+  cylinder wall thickness.
 
 There is also a separate experimental stent workflow. This is not part of the
 normal `main.py` pipeline yet, because selecting the correct boundaries on a
@@ -55,6 +56,8 @@ real stent STEP file is more complicated than on the simple cylinder.
 │   ├── febio_helpers.py
 │   └── result_helpers.py
 ├── studies/
+│   ├── cylinder_thickness.py
+│   ├── make_plots.py
 │   ├── mesh_convergence.py
 │   └── youngs_modulus.py
 └── thesis/
@@ -183,7 +186,8 @@ cd ../../..
 This creates a labelled stent mesh and a first pressure-based FEBio model. It
 should be treated as experimental, because the inner-wall and support-region
 selection still needs more validation before it can be used as part of the main
-pipeline.
+pipeline. The stent pressure model is currently run as a dynamic analysis
+without extra support nodes.
 
 ## FEBio model creation
 
@@ -230,12 +234,18 @@ The result extraction step currently prints:
 
 ## Parameter studies
 
-Two small study scripts are included:
+Three small study scripts are included:
 
 - `studies/mesh_convergence.py`: runs the compression case for solid and hollow
   cylinders with several mesh sizes.
 - `studies/youngs_modulus.py`: runs the compression case for several Young's
   modulus values while keeping the mesh size fixed.
+- `studies/cylinder_thickness.py`: runs the hollow-cylinder compression case
+  with several wall thicknesses.
+
+Plots are made with:
+
+- `studies/make_plots.py`: reads the study CSV files and saves the figures.
 
 The study scripts write CSV files to `study_results/`. That folder is ignored by
 Git because the files are generated output.

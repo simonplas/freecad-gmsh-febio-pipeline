@@ -45,7 +45,6 @@ def febio_finished_normally():
 
 
 def convert_xplt_to_hdf5():
-def convert_xplt_to_hdf5():
     """Convert a FEBio '.xplt' file to HDF5 for easier access in Python.
 
     This writes 'HDF5_FILE' and temporarily patches h5py to avoid storing a
@@ -73,7 +72,6 @@ def convert_xplt_to_hdf5():
 
 
 def print_result_summary(name, values):
-def print_result_summary(name, values):
     """Print simple stats (count, max, mean, min/max components).
 
     name : str
@@ -91,7 +89,6 @@ def print_result_summary(name, values):
     print(f"- maximum components: {values.max(axis=0)}")
 
 
-def print_compression_stiffness(top_face_reaction_forces):
 def print_compression_stiffness(top_face_reaction_forces):
     """Compute and print stiffness vs simple theory for the top face.
 
@@ -124,7 +121,6 @@ def print_compression_stiffness(top_face_reaction_forces):
     print("- note: the theoretical value uses the same model units as the geometry and material settings")
 
 
-def main():
 def main():
     """Convert the '.xplt' to HDF5 and print a short summary of results.
 

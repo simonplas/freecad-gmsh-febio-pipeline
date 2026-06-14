@@ -19,6 +19,7 @@ related_work_notes.md
 __pycache__/
 *.pyc
 gmsh_step/check_mesh_quality.py
+studies/mesh_order.py
 
 
 *.aux
@@ -41,6 +42,7 @@ gmsh_step/check_mesh_quality.py
 febio_step/jobs/
 febio_step/output
 study_results/
+thesis/
 
 
 logo/*.aux

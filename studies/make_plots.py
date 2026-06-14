@@ -5,17 +5,21 @@ this only reads their csv files and saves figures
 """
 
 import csv
+import os
 from pathlib import Path
-
-import matplotlib.pyplot as plt
 
 
 ROOT = Path(__file__).resolve().parents[1]
+os.environ.setdefault("MPLCONFIGDIR", "/tmp/pipelinefebio_matplotlib")
+
+import matplotlib.pyplot as plt
+
 RESULTS_FOLDER = ROOT / "study_results"
 FIGURE_FOLDER = RESULTS_FOLDER / "figures"
 
 MESH_CONVERGENCE_FILE = RESULTS_FOLDER / "mesh_convergence.csv"
 YOUNGS_MODULUS_FILE = RESULTS_FOLDER / "youngs_modulus.csv"
+CYLINDER_THICKNESS_FILE = RESULTS_FOLDER / "cylinder_thickness.csv"
 
 
 def read_csv_rows(file_path):
@@ -29,6 +33,10 @@ def read_csv_rows(file_path):
     list[dict]
         Rows where the 'status' field is 'ok'.
     """
+    if not file_path.exists():
+        print(f"skipping missing results file: {file_path}")
+        return []
+
     with file_path.open() as csv_file:
         reader = csv.DictReader(csv_file)
         rows = list(reader)
@@ -105,6 +113,44 @@ def plot_two_cylinder_types(
         plt.axhline(0, color="black", linewidth=1, alpha=0.4)
     plt.grid(True, alpha=0.3)
     plt.legend()
+    plt.tight_layout()
+
+    output_file = FIGURE_FOLDER / figure_name
+    plt.savefig(output_file, dpi=200)
+    plt.savefig(output_file.with_suffix(".pdf"))
+    plt.close()
+
+    print(f"saved {output_file}")
+
+
+def plot_one_series(
+    rows,
+    x_column,
+    y_column,
+    x_label,
+    y_label,
+    title,
+    figure_name,
+    x_scale=1.0,
+    y_scale=1.0,
+):
+    """plot one study series and save it"""
+    if not rows:
+        print(f"skipping {figure_name}, no rows")
+        return
+
+    sorted_rows = sorted(rows, key=lambda row: float(row[x_column]))
+    x_values = values_from_rows(sorted_rows, x_column, x_scale)
+    y_values = values_from_rows(sorted_rows, y_column, y_scale)
+
+    plt.figure(figsize=(7, 4.5))
+    plt.plot(x_values, y_values, marker="o", linewidth=2)
+    plt.xlabel(x_label)
+    plt.ylabel(y_label)
+    plt.title(title)
+    if "error" in y_column:
+        plt.axhline(0, color="black", linewidth=1, alpha=0.4)
+    plt.grid(True, alpha=0.3)
     plt.tight_layout()
 
     output_file = FIGURE_FOLDER / figure_name
@@ -220,6 +266,39 @@ def make_youngs_modulus_plots():
     )
 
 
+def make_cylinder_thickness_plots():
+    """Make plots for the wall thickness geometry study"""
+    rows = read_csv_rows(CYLINDER_THICKNESS_FILE)
+
+    plot_one_series(
+        rows,
+        x_column="wall_thickness",
+        y_column="z_reaction_force_abs",
+        x_label="wall thickness",
+        y_label="reaction force magnitude",
+        title="wall thickness vs reaction force",
+        figure_name="wall_thickness_vs_reaction_force.png",
+    )
+    plot_one_series(
+        rows,
+        x_column="wall_thickness",
+        y_column="compression_stiffness",
+        x_label="wall thickness",
+        y_label="compression stiffness",
+        title="wall thickness vs compression stiffness",
+        figure_name="wall_thickness_vs_stiffness.png",
+    )
+    plot_one_series(
+        rows,
+        x_column="wall_thickness",
+        y_column="stiffness_error_percent",
+        x_label="wall thickness",
+        y_label="difference from theory (%)",
+        title="wall thickness vs stiffness difference",
+        figure_name="wall_thickness_vs_stiffness_error.png",
+    )
+
+
 def main():
     """Make the figures folder (if needed) and save all plots.
 
@@ -230,6 +309,7 @@ def main():
 
     make_mesh_convergence_plots()
     make_youngs_modulus_plots()
+    make_cylinder_thickness_plots()
 
     print(f"\nfigures saved in: {FIGURE_FOLDER}")
 

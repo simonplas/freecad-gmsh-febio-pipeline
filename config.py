@@ -48,9 +48,9 @@ FREECAD_COMMAND = ROOT / ".tools" / "freecad-appimage" / "squashfs-root" / "AppR
 
 # Options: "solid" or "hollow".
 CYLINDER_TYPE = os.environ.get("PIPELINE_CYLINDER_TYPE", "hollow")
-CYLINDER_RADIUS = 3
-CYLINDER_INNER_RADIUS = 2
-CYLINDER_HEIGHT = 15
+CYLINDER_RADIUS = float(os.environ.get("PIPELINE_CYLINDER_RADIUS", 3))
+CYLINDER_INNER_RADIUS = float(os.environ.get("PIPELINE_CYLINDER_INNER_RADIUS", 2))
+CYLINDER_HEIGHT = float(os.environ.get("PIPELINE_CYLINDER_HEIGHT", 15))
 
 
 # basic mesh settings
@@ -60,7 +60,7 @@ MESH_SIZE = float(os.environ.get("PIPELINE_MESH_SIZE", 0.5))
 # For the simple cylinder, these can usually both be MESH_SIZE.
 MESH_SIZE_MIN = MESH_SIZE
 MESH_SIZE_MAX = MESH_SIZE
-MESH_ELEMENT_ORDER = 1
+MESH_ELEMENT_ORDER = int(os.environ.get("PIPELINE_MESH_ELEMENT_ORDER", 1))
 MESH_FORMAT_VERSION = 4.1
 
 

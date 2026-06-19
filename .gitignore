@@ -15,6 +15,7 @@ venv/
 literature_paper_tracker.xlsx
 related_work_notes.md
 *.step
+!stent.step
 *.msh
 __pycache__/
 *.pyc
@@ -49,3 +50,4 @@ logo/*.aux
 logo/*.log
 
 screenshot.png
+/*.png

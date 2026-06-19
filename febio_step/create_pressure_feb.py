@@ -88,7 +88,7 @@ def main():
 
     model.save(str(PRESSURE_FEB_FILE))
 
-    print(f"\nPressure FEBio file written: {PRESSURE_FEB_FILE}")
+    print(f"\npressure FEBio file written: {PRESSURE_FEB_FILE}")
 
 
 if __name__ == "__main__":

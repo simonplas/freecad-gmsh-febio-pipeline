@@ -33,8 +33,7 @@ STENT_JOB_DIR = ROOT / "febio_step" / "jobs" / "stent"
 STENT_FEB_FILE = STENT_JOB_DIR / "pressure_stent.feb"
 
 PRESSURE_SURFACE = "inner_wall"
-# Keep this small for the first stent test. A high pressure can invert the
-# small tetrahedral elements before the solver has a chance to converge.
+# keep the pressure low to avoid inverting small elements
 INTERNAL_PRESSURE = 1.0e5
 
 

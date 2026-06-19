@@ -56,8 +56,8 @@ def convert_xplt_to_hdf5():
     original_set_attribute = AttributeManager.__setitem__
 
     def skip_duplicate_surface_faces_attribute(attribute_manager, name, value):
-        # pyfebio already saves surface faces as datasets
-        # on fine meshes the duplicate hdf5 attribute gets too large
+        # pyfebio already saves the surface faces as datasets
+        # the duplicate attribute can become too large on fine meshes
         if name == "faces":
             return
 
@@ -118,7 +118,7 @@ def print_compression_stiffness(top_face_reaction_forces):
     print(f"- febio stiffness: {stiffness}")
     print(f"- simple theoretical stiffness: {theoretical_stiffness}")
     print(f"- difference from theory: {stiffness_difference}%")
-    print("- note: the theoretical value uses the same model units as the geometry and material settings")
+    print("- the theoretical value uses the same model units as the other settings")
 
 
 def main():

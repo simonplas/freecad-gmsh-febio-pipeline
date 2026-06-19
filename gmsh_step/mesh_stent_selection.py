@@ -17,18 +17,19 @@ from config import ROOT
 STENT_STEP_FILE = ROOT / "stent.step"
 STENT_MSH_FILE = ROOT / "gmsh_step" / "stent_inner_selection.msh"
 
-# The stent STEP needed quite tolerant healing settings in the Gmsh GUI.
+# the stent STEP needs fairly tolerant healing settings
 GEOMETRY_TOLERANCE = 1e-2
 MESH_SIZE_MIN = 0.01
 MESH_SIZE_MAX = 0.1
 
-# The real stent has many tiny faces. The inner and outer cylindrical
-# boundaries are much larger, so this keeps the selection focused on those.
+# the stent has many tiny faces
+# the area limit keeps the selection focused on the large cylindrical surfaces
 MIN_BOUNDARY_AREA = 10
 
 
 def set_gmsh_options():
     """Use the healing and mesh settings that helped in the Gmsh GUI."""
+    gmsh.option.setNumber("General.Verbosity", 2)
     gmsh.option.setNumber("Geometry.Tolerance", GEOMETRY_TOLERANCE)
     gmsh.option.setNumber("Geometry.OCCFixDegenerated", 1)
     gmsh.option.setNumber("Geometry.OCCFixSmallEdges", 1)

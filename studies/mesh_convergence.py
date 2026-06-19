@@ -38,8 +38,8 @@ RESULTS_FOLDER = ROOT / "study_results"
 RESULTS_FILE = RESULTS_FOLDER / "mesh_convergence.csv"
 HDF5_FILE = COMPRESSION_FEB_FILE.with_suffix(".hdf5")
 
-# smaller values give a finer mesh but also bigger febio output files
-# the study saves fewer time steps so these cases stay testable
+# smaller values give a finer mesh and larger output files
+# save fewer time steps to keep the runs manageable
 MESH_SIZES = [1.0, 0.75, 0.5, 0.35, 0.25]
 CYLINDER_TYPES = ["solid", "hollow"]
 

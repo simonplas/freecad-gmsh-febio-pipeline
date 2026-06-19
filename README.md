@@ -1,251 +1,153 @@
-# pipelinefebio
+# Automated FreeCAD-Gmsh-FEBio pipeline
 
-This repository contains a Bachelor thesis project about building a Python
-pipeline for finite element simulations in FEBio
-
-The workflow connects geometry, meshing, FEBio model creation, simulation, and
-basic result extraction:
+This repository contains the code for a Bachelor thesis project on automating
+finite element simulations. The main workflow connects:
 
 ```text
-FreeCAD -> STEP -> Gmsh -> MSH -> pyfebio -> FEBio -> XPLT -> HDF5 -> Python results
+FreeCAD -> STEP -> Gmsh -> MSH -> pyfebio -> FEBio -> XPLT -> HDF5 -> results
 ```
 
-The normal pipeline currently focuses on a simple FreeCAD-generated cylinder.
-The cylinder can be solid or hollow, which keeps the geometry simple enough to
-understand while still making it possible to test meshing, compression, and
-radial pressure
+The reproducible main pipeline uses solid and hollow cylinders. A separate
+stent route demonstrates meshing, inner-surface selection and a dynamic FEBio
+pressure simulation for an imported STEP geometry.
 
-## Current status
+## Features
 
-At the moment, the pipeline can:
+- parameterised solid and hollow cylinder generation in FreeCAD;
+- three-dimensional Gmsh meshing with named volume and surface regions;
+- compression and internal-pressure FEBio model generation with pyfebio;
+- command-line FEBio execution and automatic result extraction;
+- mesh-convergence, Young's-modulus and cylinder-thickness studies;
+- plots generated from the study CSV files;
+- a separate imported-stent meshing and pressure-simulation route.
 
-- create a solid or hollow cylinder in FreeCAD using Python;
-- change geometry, mesh, load-case, and file settings from `config.py`;
-- import the generated STEP file in Gmsh;
-- generate a 3D mesh;
-- label the volume and boundary surfaces in Gmsh;
-- create either a FEBio compression model or pressure model with pyfebio;
-- run the FEBio solver from the command line with `febio4`;
-- create an `.xplt` result file;
-- convert the `.xplt` result file to `.hdf5`;
-- extract displacement, reaction force, stress, strain, and compression
-  stiffness values with Python;
-- run small parameter studies for mesh convergence, Young's modulus, and
-  cylinder wall thickness.
+## Requirements
 
-There is also a separate experimental stent workflow. This is not part of the
-normal `main.py` pipeline yet, because selecting the correct boundaries on a
-real stent STEP file is more complicated than on the simple cylinder.
+- Python 3.11 or newer;
+- FreeCAD with command-line Python support;
+- FEBio 4, with the `febio4` executable available;
+- the Python packages in `requirements.txt`.
 
-## Project structure
+Create and activate a virtual environment, then install the dependencies:
 
-```text
-.
-├── config.py
-├── main.py
-├── freecad_step/
-│   └── script.py
-├── gmsh_step/
-│   ├── mesh.py
-│   └── mesh_stent_selection.py
-├── febio_step/
-│   ├── create_compression_feb.py
-│   ├── create_pressure_feb.py
-│   ├── create_stent_pressure_feb.py
-│   ├── extract_results.py
-│   ├── febio_helpers.py
-│   └── result_helpers.py
-├── studies/
-│   ├── cylinder_thickness.py
-│   ├── make_plots.py
-│   ├── mesh_convergence.py
-│   └── youngs_modulus.py
-└── thesis/
+```bash
+python3 -m venv venv
+source venv/bin/activate
+python -m pip install -r requirements.txt
 ```
 
-## Configuration
+The executable locations can be configured when they are not on `PATH`:
 
-Most settings are stored in `config.py`
-
-### Cylinder parameters
-
-```python
-CYLINDER_TYPE = "hollow"
-CYLINDER_RADIUS = 3
-CYLINDER_INNER_RADIUS = 2
-CYLINDER_HEIGHT = 15
+```bash
+export FREECAD_COMMAND=/path/to/FreeCADCmd
+export FEBIO_COMMAND=/path/to/febio4
 ```
 
-Available options:
+The local development setup may also use
+`.tools/freecad-appimage/squashfs-root/AppRun`. The `.tools` directory is not
+part of the repository.
 
-- `CYLINDER_TYPE = "solid"`: creates a solid cylinder.
-- `CYLINDER_TYPE = "hollow"`: creates a hollow cylinder with an inner wall.
+## Running the cylinder pipeline
 
-The hollow cylinder is useful for testing radial pressure on the inside wall.
-
-### Load case
-
-```python
-LOAD_CASE = "compression"
-```
-
-Available options:
-
-- `LOAD_CASE = "compression"`: fixes the bottom face and moves the top face
-  downward
-- `LOAD_CASE = "pressure"`: applies pressure to a wall surface, usually the
-  `inner_wall` of the hollow cylinder.
-
-The compression displacement and pressure settings are also stored in
-`config.py`:
-
-```python
-COMPRESSION_DISPLACEMENT_Z = -0.1
-PRESSURE_SURFACE = "inner_wall"
-INTERNAL_PRESSURE = 2.0e10
-```
-
-### Mesh settings
-
-```python
-MESH_SIZE = 0.5
-MESH_SIZE_MIN = MESH_SIZE
-MESH_SIZE_MAX = MESH_SIZE
-MESH_ELEMENT_ORDER = 1
-MESH_FORMAT_VERSION = 4.1
-```
-
-Useful options:
-
-- smaller `MESH_SIZE_MIN` and `MESH_SIZE_MAX` values create a finer mesh
-- `MESH_ELEMENT_ORDER = 1` uses first-order tetrahedral elements (for now thats enough, can be changed to 2 later if needed)
-- `MESH_FORMAT_VERSION = 4.1` is used because pyfebio/meshio keeps the Gmsh
-  physical groups as named surfaces and node sets in this format which is very handy.
-
-## Running the pipeline
-
-First activate the virtual environment:
+Select the geometry and load case in `config.py`, then run:
 
 ```bash
 source venv/bin/activate
-```
-
-Install the Python dependencies if needed:
-
-```bash
-pip install -r requirements.txt
-```
-
-Then run:
-
-```bash
 python main.py
 ```
 
-This runs:
+The runner performs five steps:
 
-```text
-1. create FreeCAD geometry
-2. generate a Gmsh mesh
-3. create the FEBio model for the selected load case
-4. run the FEBio solver with `febio4`
-5. convert the XPLT result file to HDF5 and extract values with Python
-```
+1. generate a cylinder STEP file with FreeCAD;
+2. generate and label a Gmsh volume mesh;
+3. create the selected FEBio input model;
+4. run FEBio;
+5. convert the XPLT output to HDF5 and print a result summary.
 
-For `GEOMETRY_NAME = "cylinder"` and `LOAD_CASE = "compression"` for example, the main
-output files are:
+The main generated files are written to:
 
 ```text
 freecad_step/cylinder.step
 gmsh_step/cylinder.msh
-febio_step/jobs/cylinder/compression_cylinder.feb
-febio_step/jobs/cylinder/compression_cylinder.xplt
-febio_step/jobs/cylinder/compression_cylinder.hdf5
+febio_step/jobs/cylinder/
 ```
 
-FEBio Studio is not required to run the pipeline. It is still useful for
-opening the `.feb` or `.xplt` files visually.
+Generated geometry, meshes, solver jobs and study results are ignored by Git.
 
-## Experimental stent workflow
+## Configuration
 
-The real stent STEP-file is kept separate from the normal cylinder pipeline for
-now. The cylinder pipeline is the reproducible core of the project. The stent
-scripts are an exploratory extension to test whether a more complex implant
-geometry can be meshed and labelled automatically.
+The main settings are in `config.py`:
 
-To try the stent workflow manually:
+- geometry: cylinder type, outer radius, inner radius and height;
+- mesh: target size, element order and MSH version;
+- material: Young's modulus, Poisson's ratio and density;
+- load case: compression or internal pressure;
+- FEBio: time steps, step size and output stride.
+
+Study scripts temporarily override selected settings through environment
+variables. The default configuration file is not rewritten.
+
+FEBio's default automatic time stepper may increase the configured step size
+when a simulation converges easily. The number of completed solver increments
+can therefore be lower than the configured number of nominal time steps.
+
+## Parameter studies
+
+Each study runs the main compression pipeline repeatedly and writes a CSV file
+to `study_results/`:
+
+```bash
+python studies/mesh_convergence.py
+python studies/youngs_modulus.py
+python studies/cylinder_thickness.py
+```
+
+Generate all study plots with:
+
+```bash
+python studies/make_plots.py
+```
+
+## Imported stent route
+
+The included stent input geometry is stored as `stent.step`. It is run
+separately because it does not use the FreeCAD cylinder-generation stage:
 
 ```bash
 python gmsh_step/mesh_stent_selection.py
 python febio_step/create_stent_pressure_feb.py
 cd febio_step/jobs/stent
 febio4 -i pressure_stent.feb
-cd ../../..
 ```
 
-This creates a labelled stent mesh and a first pressure-based FEBio model. It
-should be treated as experimental, because the inner-wall and support-region
-selection still needs more validation before it can be used as part of the main
-pipeline. The stent pressure model is currently run as a dynamic analysis
-without extra support nodes.
+The Gmsh script creates a volume mesh and selects the inner and outer
+cylindrical surfaces from their geometry. The FEBio script applies pressure to
+the labelled inner wall and uses a dynamic analysis without support nodes.
+This route demonstrates that the meshing and simulation stages can process the
+more complex imported geometry, but it is not yet integrated into `main.py`.
+Generating the stent mesh can take several minutes.
 
-## FEBio model creation
+## Tests
 
-The FEBio input file is created with pyfebio.
+The lightweight tests check the result calculations without requiring FreeCAD
+or FEBio:
 
-The shared FEBio setup is stored in `febio_step/febio_helpers.py`. This file
-contains the common material, solver settings, load curve, output requests, and
-mesh-reading function.
-
-The load-case-specific files are:
-
-- `febio_step/create_compression_feb.py`: this file fixes the bottom face and puts
-  a downward displacement on the top face.
-- `febio_step/create_pressure_feb.py`: this file fixes the bottom face and applies
-  pressure to the inner wall of a hollow cylinder.
-
-The current material is stainless steel:
-
-```python
-Young's modulus = 193e9
-Poisson ratio = 0.3
-density = 8000
+```bash
+python -m unittest discover -s tests
 ```
 
-## Result extraction
+An end-to-end run still requires both external programs because it generates
+the geometry, mesh and solver output from scratch.
 
-FEBio writes result data to an `.xplt` file. Python does not read this file
-directly. Instead, `febio_step/extract_results.py` uses pyfebio to convert it
-to HDF5:
+## Project structure
 
-```python
-from pyfebio import xplt
-
-xplt.to_hdf5(inputfile="result.xplt", outputfile="result.hdf5")
+```text
+config.py                         shared pipeline settings
+main.py                           cylinder pipeline runner
+freecad_step/script.py            cylinder geometry generation
+gmsh_step/mesh.py                 cylinder meshing and region labels
+gmsh_step/mesh_stent_selection.py imported-stent meshing and selection
+febio_step/                       FEBio model and result helpers
+studies/                          parameter studies and plotting
+tests/                            lightweight calculation tests
 ```
-
-The result extraction step currently prints:
-
-- final displacement values;
-- reaction forces;
-- stress;
-- Lagrange strain;
-- compression stiffness for the compression case.
-
-## Parameter studies
-
-Three small study scripts are included:
-
-- `studies/mesh_convergence.py`: runs the compression case for solid and hollow
-  cylinders with several mesh sizes.
-- `studies/youngs_modulus.py`: runs the compression case for several Young's
-  modulus values while keeping the mesh size fixed.
-- `studies/cylinder_thickness.py`: runs the hollow-cylinder compression case
-  with several wall thicknesses.
-
-Plots are made with:
-
-- `studies/make_plots.py`: reads the study CSV files and saves the figures.
-
-The study scripts write CSV files to `study_results/`. That folder is ignored by
-Git because the files are generated output.

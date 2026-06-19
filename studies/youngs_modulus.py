@@ -37,12 +37,12 @@ RESULTS_FOLDER = ROOT / "study_results"
 RESULTS_FILE = RESULTS_FOLDER / "youngs_modulus.csv"
 HDF5_FILE = COMPRESSION_FEB_FILE.with_suffix(".hdf5")
 
-# keep the mesh fixed so mesh effects and material effects do not get mixed
+# keep the mesh fixed so only the material value changes
 MESH_SIZE = 0.5
 CYLINDER_TYPES = ["solid", "hollow"]
 
-# pa
-# 193e9 is the stainless steel value used in the normal pipeline
+# values in Pa
+# 193e9 is the default stainless steel value
 YOUNG_MODULUS_VALUES = [50e9, 100e9, 150e9, 193e9, 250e9]
 
 

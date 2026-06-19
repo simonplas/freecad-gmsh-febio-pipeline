@@ -133,6 +133,8 @@ def plot_one_series(
     figure_name,
     x_scale=1.0,
     y_scale=1.0,
+    comparison_column=None,
+    comparison_label=None,
 ):
     """plot one study series and save it"""
     if not rows:
@@ -144,13 +146,26 @@ def plot_one_series(
     y_values = values_from_rows(sorted_rows, y_column, y_scale)
 
     plt.figure(figsize=(7, 4.5))
-    plt.plot(x_values, y_values, marker="o", linewidth=2)
+    plt.plot(x_values, y_values, marker="o", linewidth=2, label="FEBio")
+    if comparison_column:
+        comparison_values = values_from_rows(
+            sorted_rows, comparison_column, y_scale
+        )
+        plt.plot(
+            x_values,
+            comparison_values,
+            linestyle="--",
+            linewidth=2,
+            label=comparison_label,
+        )
     plt.xlabel(x_label)
     plt.ylabel(y_label)
     plt.title(title)
     if "error" in y_column:
         plt.axhline(0, color="black", linewidth=1, alpha=0.4)
     plt.grid(True, alpha=0.3)
+    if comparison_column:
+        plt.legend()
     plt.tight_layout()
 
     output_file = FIGURE_FOLDER / figure_name
@@ -287,6 +302,8 @@ def make_cylinder_thickness_plots():
         y_label="compression stiffness",
         title="wall thickness vs compression stiffness",
         figure_name="wall_thickness_vs_stiffness.png",
+        comparison_column="theoretical_stiffness",
+        comparison_label="theoretical",
     )
     plot_one_series(
         rows,

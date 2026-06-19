@@ -41,7 +41,7 @@ def print_febio_mesh_summary(mesh):
     surfaces = [surface.name for surface in mesh.surfaces]
     node_sets = [node_set.name for node_set in mesh.node_sets]
 
-    print("\nFEBio found these mesh labels:")
+    print("\nFEBio mesh labels")
     print(f"- solid parts: {', '.join(solid_parts)}")
     print(f"- surfaces: {', '.join(surfaces)}")
     print(f"- node sets: {', '.join(node_sets)}")
@@ -53,7 +53,7 @@ def read_mesh_for_febio():
     Returns the pyfebio mesh object that contains 'elements', 'surfaces' and
     'node_sets'.
     """
-    print(f"Reading Gmsh mesh: {MSH_FILE}")
+    print(f"reading Gmsh mesh: {MSH_FILE}")
 
     gmsh_mesh = meshio.gmsh.read(MSH_FILE)
     febio_mesh = feb.mesh.translate_meshio(gmsh_mesh)

@@ -70,7 +70,7 @@ def main():
 
     model.save(str(FEB_FILE))
 
-    print(f"\nCompression FEBio file written: {FEB_FILE}")
+    print(f"\ncompression FEBio file written: {FEB_FILE}")
 
 
 if __name__ == "__main__":

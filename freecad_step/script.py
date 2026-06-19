@@ -10,7 +10,7 @@ import sys
 
 import Part
 
-# Allows us to use files from the root of this project
+# make the project root importable
 sys.path.append(str(Path(__file__).resolve().parents[1]))
 
 from config import (

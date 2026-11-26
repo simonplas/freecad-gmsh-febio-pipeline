@@ -1,32 +1,32 @@
 # Automated FreeCAD-Gmsh-FEBio pipeline
 
-An open-source Python pipeline that turns geometry parameters into finite
-element results without manual steps in between. It was developed for my BSc
-thesis in Computer Science at the University of Amsterdam
-([PDF](docs/thesis.pdf)), with vascular stents as the motivating application.
+A Python pipeline that goes from geometry parameters to finite element
+results without any manual steps in between. I built it for my BSc thesis in
+Computer Science at the University of Amsterdam ([PDF](docs/thesis.pdf)). The
+idea behind it is to make simulations of vascular stents easier to repeat.
 
 ```text
 FreeCAD -> STEP -> Gmsh -> MSH -> pyfebio -> FEBio -> XPLT -> HDF5 -> results
 ```
 
-The reproducible main pipeline uses solid and hollow cylinders, which have an
-analytical solution and can therefore be used to verify the workflow. A
-separate route meshes an imported stent geometry, selects its inner surface
-and runs a FEBio pressure simulation.
+The main pipeline uses solid and hollow cylinders. Their stiffness can be
+calculated by hand, so I used them to check that the whole workflow gives
+correct results. A separate script meshes an imported stent geometry, selects
+its inner surface and runs a FEBio pressure simulation on it.
 
 ![FEBio displacement magnitude for the imported stent geometry](docs/figures/stent_displacement.png)
 
 ## Key results
 
-- **Verified against theory:** simulated axial stiffness is within 0.13% of
-  the analytical value E·A/L for both cylinder types (table below).
-- **Parameters pass through the whole workflow:** changing the wall thickness
-  or Young's modulus in `config.py` regenerates geometry, mesh and solver
-  input, and changes the results as theory predicts.
-- **Mesh study:** stiffness converges as the mesh is refined; peak stress
+- The simulated stiffness of both cylinders is within 0.13% of the
+  theoretical value E·A/L (see the table below).
+- Changing the wall thickness or Young's modulus in `config.py` creates a new
+  geometry, mesh and FEBio model, and the results change the way theory
+  predicts.
+- The stiffness converges when the mesh gets finer, but the maximum stress
   does not (see [Known limitations](#known-limitations)).
-- **Imported geometry:** the stent route meshes a 97,261-element model and
-  completes a pressure simulation.
+- The stent script meshes a 97,261-element model and the pressure simulation
+  runs to the end.
 
 ## Features
 
@@ -146,23 +146,23 @@ Generating the stent mesh can take several minutes.
 
 ## Results
 
-All numbers below are from the thesis (Chapter 6), using first-order
-tetrahedral elements and a linear elastic material with E = 193 GPa and
-ν = 0.3.
+All numbers below come from chapter 6 of the thesis. The simulations use
+first-order tetrahedral elements and a linear elastic material with
+E = 193 GPa and ν = 0.3.
 
 ### Stiffness verification
 
-Compression of a cylinder with radius 3, height 15 (hollow: inner radius 2)
-and mesh size 0.5, compared with the analytical axial stiffness
-k = E·A/L:
+Compression of a cylinder with radius 3 and height 15 (the hollow one has
+inner radius 2), with mesh size 0.5. The simulated stiffness is compared with
+the theoretical stiffness k = E·A/L:
 
 | Geometry        | Simulated stiffness | Analytical stiffness | Difference |
 |-----------------|---------------------|----------------------|------------|
 | Solid cylinder  | 3.633 × 10¹¹        | 3.638 × 10¹¹         | −0.13%     |
 | Hollow cylinder | 2.022 × 10¹¹        | 2.021 × 10¹¹         | +0.04%     |
 
-Across the wall-thickness study (0.5 to 2.0) the difference from theory
-stayed between −0.09% and +0.16%.
+In the wall thickness study (0.5 to 2.0) the difference with theory stayed
+between −0.09% and +0.16%.
 
 ### Mesh convergence
 
@@ -180,45 +180,43 @@ stayed between −0.09% and +0.16%.
   <img src="docs/figures/mesh_convergence_max_stress_solid.png" alt="Maximum stress against mesh size for the solid cylinder" width="49%">
 </p>
 
-Stiffness, a quantity summed over the whole loaded face, converges.
-The maximum stress, a single-point value, keeps increasing; see below.
+The stiffness is based on the total force on the top face and converges.
+The maximum stress is a value in a single element and keeps going up (more on
+this below).
 
 ## Units
 
-FEBio has no built-in units, so any consistent set can be used. In this
-pipeline, Young's modulus and pressure are given in Pa, so stresses are
-reported in Pa. Lengths are in model units and are not converted.
-As a result, reaction forces have units of Pa × (model unit)² and stiffness
-has units of Pa × (model unit). For the elastic results above, these
-quantities scale consistently, so the comparison with E·A/L does not depend
-on the chosen length unit. Density and time do depend on it, so the dynamic
-stent simulation should only be interpreted after fixing a consistent unit
-system.
+FEBio does not use fixed units, so you have to keep them consistent
+yourself. Here Young's modulus and pressure are in Pa, so stresses are also
+in Pa. Lengths are in model units and are not converted. This means reaction
+forces are in Pa × (model unit)² and stiffness in Pa × (model unit). For the
+elastic results above this does not matter, because the comparison with
+E·A/L works for any length unit. It does matter for density and time, so the
+dynamic stent simulation needs a consistent unit system before its numbers
+mean anything.
 
 ## Known limitations
 
-These points were identified after the thesis was submitted. The thesis
-itself is unchanged.
+I noticed some of these after handing in the thesis. The thesis itself has
+not been changed.
 
-- **The maximum stress does not converge, most likely because of a stress
-  singularity.** The compression model fixes the bottom face in all three
-  directions. This prevents the sideways (Poisson) expansion of the material
-  at the clamped edge. The expected uniform stress is E·δ/L ≈ 1.29 GPa, but
-  the peak stress keeps rising with mesh refinement (2.11 → 2.88 GPa). This
-  is typical of a singularity at the clamped edge, where refinement never
-  converges. The thesis attributed this to insufficient mesh refinement.
-  Planned check: locate the peak element, and compare with a
-  roller-supported bottom face (z fixed, minimal constraints against rigid
-  body motion).
-- **The default internal pressure is unrealistically high.** The default of
-  2 × 10¹⁰ Pa produces strains far outside the range in which a linear
-  elastic model is valid. It was chosen to make the pressure response
-  clearly visible, not as a physical load.
-- **The stent route is a demonstration, not a validated model.** It uses a
-  linear elastic material, a dynamic analysis without supports and no
-  contact with a vessel. Real stent deployment requires plasticity or
-  superelastic material models, contact and comparison with bench-test data.
-- **The stent route is not integrated into `main.py`.**
+- The maximum stress does not converge, probably because of a stress
+  singularity. The bottom face is fixed in all three directions, so the
+  material cannot expand sideways there. Under uniform compression the stress
+  should be about E·δ/L ≈ 1.29 GPa, but the maximum keeps going up as the mesh
+  gets finer (2.11 → 2.88 GPa). That is what you would expect from a
+  singularity at the clamped edge, which does not converge no matter how fine
+  the mesh is. In the thesis I assumed the mesh was just not fine enough yet.
+  This could be checked by finding the element with the peak stress, or by
+  only fixing the bottom face in the z direction.
+- The default internal pressure of 2 × 10¹⁰ Pa is far too high for a real
+  load. The resulting strains are much larger than a linear elastic model can
+  describe.
+- The stent simulation is a demonstration, not a validated model. It uses a
+  linear elastic material, a dynamic analysis without supports and no contact
+  with a vessel wall. A realistic stent model would need plasticity or a
+  superelastic material, contact, and a comparison with bench test data.
+- The stent route is not part of `main.py` yet.
 
 ## Tests
 
